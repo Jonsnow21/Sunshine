@@ -1,6 +1,8 @@
 package com.example.android.sunshine.app;
 
 import android.content.ClipData;
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -13,8 +15,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,6 +39,8 @@ import java.util.List;
  * A forecast fragment containing a simple view.
  */
 public class ForecastFragment extends Fragment {
+
+    private ArrayAdapter<String> mForecastAdapter;
 
     public ForecastFragment() {
     }
@@ -83,7 +89,7 @@ public class ForecastFragment extends Fragment {
         // Now that we have some dummy forecast data, create an ArrayAdapter.
         // The ArrayAdapter will take data from a source (like our dummy forecast) and
         // use it to populate the ListView it's attached to.
-        ArrayAdapter<String> mForecastAdapter =
+        mForecastAdapter =
                new ArrayAdapter<String>(
                         getActivity(), // The current context (this activity)
                         R.layout.list_item_forecast, // The name of the layout ID.
@@ -95,6 +101,18 @@ public class ForecastFragment extends Fragment {
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(mForecastAdapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                String forecast = mForecastAdapter.getItem(position);
+
+                Intent intent = new Intent( getActivity(), DetailActivity.class).putExtra(Intent.EXTRA_TEXT,forecast);
+                startActivity(intent);
+
+                //Toast.makeText( getActivity(), forecast, Toast.LENGTH_SHORT ).show();
+            }
+        });
 
         return rootView;
     }
@@ -195,9 +213,9 @@ public class ForecastFragment extends Fragment {
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 
-            for (String s : resultStrs) {
-                Log.v(LOG_TAG, "Forecast entry: " + s);
-            }
+//            for (String s : resultStrs) {
+//                Log.v(LOG_TAG, "Forecast entry: " + s);
+//            }
             return resultStrs;
 
         }
@@ -242,7 +260,7 @@ public class ForecastFragment extends Fragment {
 
                 URL url = new URL(builtUri.toString());
 
-                Log.v(LOG_TAG, "Built Uri" + builtUri.toString());
+                //Log.v(LOG_TAG, "Built Uri" + builtUri.toString());
 
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -271,7 +289,7 @@ public class ForecastFragment extends Fragment {
                     return null;
                 }
                 forecastJsonStr = buffer.toString();
-                Log.v( LOG_TAG, "Forecast JSON str" + forecastJsonStr );
+                //Log.v( LOG_TAG, "Forecast JSON str" + forecastJsonStr );
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error ", e);
                 // If the code didn't successfully get the weather data, there's no point in attemping
@@ -297,6 +315,16 @@ public class ForecastFragment extends Fragment {
                 e.printStackTrace();
             }
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(String[] result) {
+            if( result != null ){
+                mForecastAdapter.clear();
+                for(String dayForecastStr : result ){
+                    mForecastAdapter.add(dayForecastStr);
+                }
+            }
         }
     }
 }
