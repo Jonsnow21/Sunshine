@@ -20,6 +20,7 @@ import android.content.ContentUris;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.text.format.Time;
+import android.util.Log;
 
 /**
  * Defines table and column names for the weather database.

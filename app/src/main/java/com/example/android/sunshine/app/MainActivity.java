@@ -20,7 +20,7 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.v(LOG_TAG, "This is onCreate");
+
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, new ForecastFragment())
@@ -29,34 +29,10 @@ public class MainActivity extends ActionBarActivity {
     }
 
     @Override
-    protected void onStart(){
-        super.onStart();
-        Log.v( LOG_TAG, "This is onStart ");
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
     }
-
-    @Override
-    protected void onResume(){
-        super.onResume();
-        Log.v(LOG_TAG, "This is onResume");
-    }
-
-    @Override
-    protected void onPause(){
-        super.onPause();
-        Log.v(LOG_TAG, "This is onPause");
-    }
-
-    @Override
-    protected void onDestroy(){
-        super.onDestroy();
-        Log.v(LOG_TAG, "This is onDestroy ");
-    }
-
-    protected void onStop(){
-        super.onStop();
-        Log.v(LOG_TAG, "This is onStop");
-    }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -77,9 +53,7 @@ public class MainActivity extends ActionBarActivity {
         final String QUERY_PARAM = "q";
         final String ZOOM_PARAM = "z";
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
-        String location = prefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
+        String location = Utility.getPreferredLocation(this);
         String zoom = "10";
 
         Uri geoLocation = Uri.parse( parsable).buildUpon()
