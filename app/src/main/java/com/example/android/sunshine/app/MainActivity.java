@@ -7,36 +7,37 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends ActionBarActivity {
+import static android.R.attr.fragment;
 
-    final String LOG_TAG = MainActivity.class.getSimpleName();
-    String mLocation;
-    String FORECAST_FRAGMENT_TAG = "ForecastFragment";
+public class MainActivity extends ActionBarActivity implements ForecastFragment.Callback {
+
+    private final String LOG_TAG = MainActivity.class.getSimpleName();
+    private static final String DETAILFRAGMENT_TAG = "DFTAG";
+
+    private boolean mTwoPane;
+    private String mLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mLocation = Utility.getPreferredLocation(this);
         setContentView(R.layout.activity_main);
 
-        mLocation = Utility.getPreferredLocation(this);
-
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new ForecastFragment(), FORECAST_FRAGMENT_TAG)
-                    .commit();
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        String location = Utility.getPreferredLocation(this);
-        if (location != null && mLocation.equals(location)) {
-            ForecastFragment ff = (ForecastFragment) getSupportFragmentManager().findFragmentByTag(FORECAST_FRAGMENT_TAG);
-            if (ff != null) {
-                ff.onLocationChanged();
+        if (findViewById(R.id.weather_detail_container) != null) {
+            // The detail container view will be present only in the large-screen layouts
+            // (res/layout-sw600dp). If this view is present, then the activity should be
+            // in two-pane mode.
+            mTwoPane = true;
+            // In two-pane mode, show the detail view in this activity by
+            // adding or replacing the detail fragment using a
+            // fragment transaction.
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.weather_detail_container, new DetailFragment(), DETAILFRAGMENT_TAG)
+                        .commit();
             }
-            mLocation = location;
+        } else {
+            mTwoPane = false;
         }
     }
 
@@ -61,21 +62,55 @@ public class MainActivity extends ActionBarActivity {
     private void openPreferredLocationInMap(){
 
         String parsable = "geo:0,0?";
-
         final String QUERY_PARAM = "q";
-        final String ZOOM_PARAM = "z";
 
         String location = Utility.getPreferredLocation(this);
-        String zoom = "10";
 
         Uri geoLocation = Uri.parse( parsable).buildUpon()
-                .appendQueryParameter( ZOOM_PARAM, zoom)
                 .appendQueryParameter( QUERY_PARAM, location)
                 .build();
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(geoLocation);
         if(intent.resolveActivity(getPackageManager()) != null ){
+            startActivity(intent);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String location = Utility.getPreferredLocation(this);
+        if (location != null && !location.equals(mLocation)) {
+            ForecastFragment ff = (ForecastFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_forecast);
+            if (ff != null) {
+                ff.onLocationChanged();
+            }
+
+            DetailFragment df = (DetailFragment)getSupportFragmentManager().findFragmentByTag(DETAILFRAGMENT_TAG);
+            if ( null != df ) {
+                df.onLocationChanged(location);
+            }
+            mLocation = location;
+        }
+    }
+
+    @Override
+    public void onItemSelected(Uri contentUri) {
+        if (mTwoPane) {
+            // In two-pane mode, show the detail view in this activity by
+            // adding or replacing the detail fragment using a
+            // fragment transaction.
+            Bundle args = new Bundle();
+            args.putParcelable(DetailFragment.DETAIL_URI, contentUri);
+            DetailFragment fragment = new DetailFragment();
+            fragment.setArguments(args);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.weather_detail_container, fragment, DETAILFRAGMENT_TAG)
+                    .commit();
+        } else {
+            Intent intent = new Intent(this, DetailActivity.class)
+                    .setData(contentUri);
             startActivity(intent);
         }
     }
