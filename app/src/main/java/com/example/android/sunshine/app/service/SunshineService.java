@@ -10,7 +10,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.text.format.Time;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 
 import com.example.android.sunshine.app.BuildConfig;
 import com.example.android.sunshine.app.data.WeatherContract;
@@ -29,7 +28,7 @@ import java.util.Vector;
 
 
 public class SunshineService extends IntentService {
-    private ArrayAdapter<String> mForecastAdapter;
+    //private ArrayAdapter<String> mForecastAdapter;
     public static final String LOCATION_QUERY_EXTRA = "lqe";
     private final String LOG_TAG = SunshineService.class.getSimpleName();
     public SunshineService() {
@@ -46,7 +45,7 @@ public class SunshineService extends IntentService {
         BufferedReader reader = null;
 
         // Will contain the raw JSON response as a string.
-        String forecastJsonStr = null;
+        String forecastJsonStr;
 
         String format = "json";
         String units = "metric";
@@ -81,7 +80,7 @@ public class SunshineService extends IntentService {
 
             // Read the input stream into a String
             InputStream inputStream = urlConnection.getInputStream();
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             if (inputStream == null) {
                 // Nothing to do.
                 return;
@@ -93,7 +92,7 @@ public class SunshineService extends IntentService {
                 // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
                 // But it does make debugging a *lot* easier if you print out the completed
                 // buffer for debugging.
-                buffer.append(line + "\n");
+                buffer.append(line);
             }
 
             if (buffer.length() == 0) {
@@ -121,7 +120,6 @@ public class SunshineService extends IntentService {
                 }
             }
         }
-        return;
     }
 
     /**
@@ -181,7 +179,7 @@ public class SunshineService extends IntentService {
             long locationId = addLocation(locationSetting, cityName, cityLatitude, cityLongitude);
 
             // Insert the new weather information into the database
-            Vector<ContentValues> cVVector = new Vector<ContentValues>(weatherArray.length());
+            Vector<ContentValues> cVVector = new Vector<>(weatherArray.length());
 
             // OWM returns daily forecasts based upon the local time of the city that is being
             // asked for, which means that we need to know the GMT offset to translate this data
@@ -254,7 +252,6 @@ public class SunshineService extends IntentService {
                 cVVector.add(weatherValues);
             }
 
-            int inserted = 0;
             // add to database
             if ( cVVector.size() > 0 ) {
                 ContentValues[] cvArray = new ContentValues[cVVector.size()];
@@ -290,7 +287,7 @@ public class SunshineService extends IntentService {
                 new String[]{locationSetting},
                 null);
 
-        if (locationCursor.moveToFirst()) {
+        if (locationCursor != null && locationCursor.moveToFirst()) {
             int locationIdIndex = locationCursor.getColumnIndex(WeatherContract.LocationEntry._ID);
             locationId = locationCursor.getLong(locationIdIndex);
         } else {
@@ -315,7 +312,9 @@ public class SunshineService extends IntentService {
             locationId = ContentUris.parseId(insertedUri);
         }
 
-        locationCursor.close();
+        if (locationCursor != null) {
+            locationCursor.close();
+        }
         // Wait, that worked?  Yes!
         return locationId;
     }
